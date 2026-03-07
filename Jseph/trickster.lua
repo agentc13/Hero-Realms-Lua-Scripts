@@ -25,20 +25,17 @@ Decrease the cost of two random cards in the market by {gold_2} until your next 
 ]]
 
 pet_monkey_layout = [[
-<hlayout spacing="0">
-<icon text="{expend}" fontsize="40"/>
-<vlayout forceheight="false" spacing="6">
-    <hlayout spacing="10">
-       <text text="Rearrange the top 3 cards of the market deck" fontsize="20"/>
-    </hlayout>
-    <hlayout spacing="10">
-       <text text="OR" fontsize="20"/>
-    </hlayout>     
-    <hlayout spacing="10">	
-        <text text="Swap a card in the market row with the top card of the market deck" fontsize="20"/>
-    </hlayout>
-</vlayout>
+<hlayout spacing="10">
+  <icon text="{expend}" fontsize="50"/>
+  <text text="Swap a card in the market row with the top card of the market deck" fontsize="24"/>
 </hlayout>
+]]
+
+black_market_layout = [[
+<vlayout forceheight="false" spacing="10">
+       <text text="{gold_1}" fontsize="60"/>
+       <text text="Rearrange the top 3 cards of the market deck" fontsize="24"/>
+</vlayout>
 ]]
 
 hidden_power_layout = [[
@@ -280,7 +277,7 @@ local function double_or_nothing_card_def()
     })
 end
 
-local function pet_monkey_effect_1()
+local function pet_monkey_effect()
     local kMoveText = "Moving to top of market deck."
     return pushTargetedEffect({
         desc = "Select a card to swap with the top card of the market deck.",
@@ -292,50 +289,6 @@ local function pet_monkey_effect_1()
             .seq(moveTarget(tradeDeckLoc).apply(selectLoc(revealLoc)))
             .seq(noUndoEffect())
         })
-end
-
-local function pet_monkey_effect_2()
-    return moveTarget(currentRevealLoc).apply(selectLoc(tradeDeckLoc).take(3).reverse())
-        .seq(noUndoEffect())
-        .seq(promptSplit({
-            selector = selectLoc(currentRevealLoc),
-            take = const(0), -- number of cards to take for split
-            sort = const(0), -- number of cards to be sorted for ef2
-            minTake = const(3), -- Number of cards for ef1
-            ef1 = moveTarget(tradeDeckLoc), -- effect to be applied to cards left
-            ef2 = ignoreTarget(nullEffect()), -- effect to be applied to sorted cards
-            header = "Pet Monkey", -- prompt header
-            description = "Rearrange the top 3 cards of the market deck.",
-            rightPileDesc = "Rightmost on top.",
-            pile1Name = "Top 3 cards.",
-            pile2Name = "Unused.",
-            eff1Tags = {  },
-            eff2Tags = {  }}))
-end
-
-local function pet_monkey_effect()
-    return pushChoiceEffect({
-        choices = {
-        {
-            effect = pet_monkey_effect_1(),
-            layout = createLayout({
-                name = "Pet Monkey",
-                art = "art/epicart/kong",
-                text = "Swap any card on the market row with the top card of the market deck."
-            }),
-        },
-        {
-            effect = pet_monkey_effect_2(),
-            layout = createLayout({
-                name = "Pet Monkey",
-                art = "art/epicart/kong",
-                text = "Rearrange the top 3 cards of the market deck.",
-                check = selectLoc(tradeDeckLoc).count()
-                    .gte(const(3))
-            }),
-        },
-    }
-    })
 end
 
 local function pet_monkey_card_def()
@@ -359,6 +312,50 @@ local function pet_monkey_card_def()
                 cost = expendCost,
                 activations = multipleActivations,
                 effect = pet_monkey_effect()})
+        },
+        layout = cardLayout,
+    })
+end
+
+function black_market_effect()
+    return moveTarget(currentRevealLoc).apply(selectLoc(tradeDeckLoc).take(3).reverse())
+        .seq(noUndoEffect())
+        .seq(gainGoldEffect(1))
+        .seq(promptSplit({
+            selector = selectLoc(currentRevealLoc),
+            take = const(0), -- number of cards to take for split
+            sort = const(0), -- number of cards to be sorted for ef2
+            minTake = const(3), -- Number of cards for ef1
+            ef1 = moveTarget(tradeDeckLoc), -- effect to be applied to cards left
+            ef2 = ignoreTarget(nullEffect()), -- effect to be applied to sorted cards
+            header = "Pet Monkey", -- prompt header
+            description = "Rearrange the top 3 cards of the market deck.",
+            rightPileDesc = "Rightmost on top.",
+            pile1Name = "Top 3 cards.",
+            pile2Name = "Unused.",
+            eff1Tags = {  },
+            eff2Tags = {  }}))
+end
+
+function black_market_card_def()
+    local cardLayout = createLayout({
+        name = "Black Market",
+        art = "art/gold_female_white_grayscale",
+        frame = "frames/alchemist_frames/alchemist_item_cardframe",
+        xmlText = black_market_layout,
+    })
+    return createItemDef({
+        id = "black_market_jseph",
+        name = "Black Market",
+        types = {itemType},
+        acquireCost = 0,
+        abilities = {
+            createAbility({
+                id = "black_market_ability_jseph",
+                trigger = onPlayTrigger,
+                cost = noCost,
+                activations = multipleActivations,
+                effect = black_market_effect()})
         },
         layout = cardLayout,
     })
@@ -414,7 +411,7 @@ function stack_the_deck_ability_def()
     return createSkillDef({
         id = "replace_ability_jseph",
         name = "Stack The Deck",
-        types = { skillType },
+        types = { abilityType },
         layout = cardLayout,
         layoutPath = "art/t_angry_skeleton",
         abilities = {
@@ -456,9 +453,9 @@ local function chooseStart()
 			.seq(createCardEffect(gold_carddef(), loc(currentPid, asidePloc)))
 			.seq(createCardEffect(gold_carddef(), loc(currentPid, asidePloc)))
 			.seq(createCardEffect(gold_carddef(), loc(currentPid, asidePloc)))
-			.seq(createCardEffect(ruby_carddef(), loc(currentPid, asidePloc)))
-			.seq(createCardEffect(dagger_carddef(), loc(currentPid, asidePloc)))
 			.seq(createCardEffect(gold_carddef(), loc(currentPid, asidePloc)))
+			.seq(createCardEffect(longsword_carddef(), loc(currentPid, asidePloc)))
+			.seq(createCardEffect(black_market_card_def(), loc(currentPid, asidePloc)))
 			.seq(createCardEffect(gold_carddef(), loc(currentPid, asidePloc)))
 			.seq(moveTarget(deckPloc).apply(selectLoc(loc(currentPid, asidePloc))))
             .seq(shuffleEffect(currentDeckLoc))
